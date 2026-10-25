@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.optimize import minimize
 import cvxopt
+from A2helpers import generateData
 
 def minSqHinge(X, y, lamb):
     d = X.shape[1]
@@ -12,7 +13,7 @@ def minSqHinge(X, y, lamb):
 
         m = y * (X @ w + w0)
         loss = np.sum(np.square(np.maximum(0, 1 - m)))
-        reg = 0.5 * lamb * float(w.T @ w)
+        reg = 0.5 * lamb * np.sum(np.square(w))
 
         return loss+ reg
 
@@ -60,3 +61,39 @@ def classify(Xtest, w, w0):
     #need np.where to dictate if the linear prediction is zero or greater we predict +1
     ytest = np.where(((Xtest @ w) + w0) >=0, 1, -1)
     return ytest
+def synExperimentsRegularize():
+    n_runs = 100
+    n_train = 100
+    n_test = 1000
+    lamb_list = [0.001, 0.01, 0.1, 1.]
+    gen_model_list = [1, 2, 3]
+    train_acc_sq_hinge = np.zeros([len(lamb_list), len(gen_model_list), n_runs])
+    test_acc_sq_hinge = np.zeros([len(lamb_list), len(gen_model_list), n_runs])
+    train_acc_hinge = np.zeros([len(lamb_list), len(gen_model_list), n_runs])
+    test_acc_hinge = np.zeros([len(lamb_list), len(gen_model_list), n_runs])
+    # TODO: Change the following random seed to your GROUP ID
+    # (the XX in A2-XX on Brightspace)
+    np.random.seed(176)
+    for r in range(n_runs):
+        for i, lamb in enumerate(lamb_list):
+            for j, gen_model in enumerate(gen_model_list):
+                Xtrain, ytrain = generateData(n=n_train, gen_model=gen_model)
+                Xtest, ytest = generateData(n=n_test, gen_model=gen_model)
+                w, w0 = minSqHinge(Xtrain, ytrain, lamb)
+
+
+                train_acc_sq_hinge[i, j, r] = np.mean(classify(Xtrain, w, w0) == ytrain)# TODO: compute accuracy on training set
+                test_acc_sq_hinge[i, j, r] = np.mean(classify(Xtest, w, w0)== ytest)
+                # TODO: compute accuracy on test set
+                w, w0 = minHinge(Xtrain, ytrain, lamb)
+                train_acc_hinge[i, j, r] = np.mean(classify(Xtrain, w, w0) == ytrain)# TODO: compute accuracy on training set
+                test_acc_hinge[i, j, r] = np.mean(classify(Xtest, w, w0)==ytest)# TODO: compute accuracy on test set
+    
+    train_accuracy = np.hstack([np.mean(train_acc_sq_hinge, axis=2),
+                                np.mean(train_acc_hinge, axis=2)])
+    test_accuracy = np.hstack([np.mean(test_acc_sq_hinge, axis=2),
+                               np.mean(test_acc_hinge, axis=2)])
+    return train_accuracy, test_accuracy
+    # TODO: compute the average accuracies over runs
+    # TODO: combine accuracies (sq_hinge and hinge)
+    # TODO: return 4-by-6 train accuracy and 4-by-6 test accuracy
