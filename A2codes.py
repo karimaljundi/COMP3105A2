@@ -27,11 +27,11 @@ def minSqHinge(X, y, lamb):
 def minHinge(X, y, lamb, stabilizer=1e-5):
     d = X.shape[1]
     n = X.shape[0]
-    q = np.vstack([np.zeros(d+1, 1), np.ones(n,1)])
+    q = np.vstack([np.zeros((d+1, 1)), np.ones((n,1))])
 
 
     #matrix of zeros
-    P = np.zeros(d+1+n, d+1+n)
+    P = np.zeros((d+1+n, d+1+n))
     #top left of matrix needs to be replaced by lamba
     P[:d, :d] = lamb * np.eye(d)
     #adding stabilizer to every diagonal entry
@@ -55,3 +55,8 @@ def minHinge(X, y, lamb, stabilizer=1e-5):
     w = u[:d]
     w0 = u[d,0]
     return w, w0
+
+def classify(Xtest, w, w0):
+    #need np.where to dictate if the linear prediction is zero or greater we predict +1
+    ytest = np.where(((Xtest @ w) + w0) >=0, 1, -1)
+    return ytest
