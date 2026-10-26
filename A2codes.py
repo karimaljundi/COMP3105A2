@@ -94,6 +94,26 @@ def synExperimentsRegularize():
     test_accuracy = np.hstack([np.mean(test_acc_sq_hinge, axis=2),
                                np.mean(test_acc_hinge, axis=2)])
     return train_accuracy, test_accuracy
-    # TODO: compute the average accuracies over runs
-    # TODO: combine accuracies (sq_hinge and hinge)
-    # TODO: return 4-by-6 train accuracy and 4-by-6 test accuracy
+def adjHinge(X, y, lamb, kernel_func):
+    # w = X^T * a => x_i ^ T * w becomes k_i^T * a
+    K = kernel_func(X,X)
+    n = X.shape[0]
+    def obj_func(u):
+            a0 = u[-1]  
+            a = u[:-1]  
+            a = a[:, None]  
+    
+            m = y * (K @ a + a0) # n by 1
+            loss = np.sum(np.square(np.maximum(0, 1 - m)))
+            reg = 0.5 * lamb * (a.T @ K @ a) # (lambda / 2 )* a^T * K * a
+    
+            return loss+ reg
+    
+    u0 = np.ones(n + 1)  
+    
+    sol = minimize(obj_func, u0)
+
+    a = sol.x[:-1][:, None]  
+    a0 = sol.x[-1]
+    
+    return a, a0
