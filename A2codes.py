@@ -149,3 +149,6 @@ def adjHinge(X, y, lamb, kernel_func, stabilizer=1e-5):
     a = u[:n]
     a0 = u[n,0]
     return a, a0    
+def adjClassify(Xtest, a, a0, X, kernel_func):
+    scores = kernel_func(Xtest, X) @ a + a0
+    return np.where(scores >=0, 1, -1)
