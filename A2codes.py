@@ -117,3 +117,35 @@ def adjHinge(X, y, lamb, kernel_func):
     a0 = sol.x[-1]
     
     return a, a0
+def adjHinge(X, y, lamb, kernel_func, stabilizer=1e-5):
+    n = X.shape[0]
+    K = kernel_func(X, X)
+
+    q = np.vstack([np.zeros((n+1, 1)), np.ones((n,1))])
+
+    # (1/2) * u^T * P * u = (lambda/2) * a^T * K * a
+    P = np.zeros((2 * n + 1, 2*n + 1))
+    #top left of matrix needs to be replaced by lamba
+    P[:n, :n] = lamb * K
+    #adding stabilizer to every diagonal entry
+    P = P + stabilizer * np.eye(2 * n  +1)
+
+    # xi >= 0 rewritten as -xi <= 0 
+    G1 = np.hstack([np.zeros((n,n)),  np.zeros((n,1)), -np.eye(n)])
+    h1 = np.zeros((n,1))
+
+    # 1 - y_i (k_i ^ T * a + a0) <= xi_i
+    # rewritten as -Delta(y) * K * a - y * a0 - xi <= -1
+    G2 = np.hstack([np.zeros((n, n)), np.zeros((n,1)), -np.eye(n)])
+    h2 = -np.ones((n,1))
+
+    G = np.vstack([G1, G2])
+    h = np.vstack([h1, h2])
+
+    cvxopt.solvers.options['show_progress'] = False
+    sol = cvxopt.solvers.qp(cvxopt.matrix(P), cvxopt.matrix(q),
+                            cvxopt.matrix(G), cvxopt.matrix(h))
+    u = np.array(sol['x'])
+    a = u[:n]
+    a0 = u[n,0]
+    return a, a0    
