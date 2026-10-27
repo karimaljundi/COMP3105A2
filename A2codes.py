@@ -1,4 +1,5 @@
 
+import pandas as pd
 import numpy as np
 from scipy.optimize import minimize
 import cvxopt
@@ -227,3 +228,40 @@ def dualClassify(Xtest, a, b, X, y, lamb, kernel_func):
     scores = (1/lamb) * kernel_func(Xtest, X) @ (y*a) + b
     # return 0 for a score of exactly 0, but we need +1
     return np.where(scores>=0, 1, -1)
+def cvMnist(dataset_folder, lamb_list, kernel_list, k=5):
+    train_data = pd.read_csv(f"{dataset_folder}/A2train.csv", header=None).to_numpy().copy()
+    X = train_data[:, 1:] / 255.
+    y = train_data[:, 0][:, None]
+    y[y == 4] = -1
+    y[y == 9] = 1
+    cv_acc = np.zeros([k, len(lamb_list), len(kernel_list)])
+
+    np.random.seed(176)
+    #shuffle indices once, then split into k roughly equal folds
+    idx = np.random.permutation(X.shape[0])
+    fold = np.array_split(idx, k)
+    for i, lamb in enumerate(lamb_list):
+        for j, kernel_func in enumerate(kernel_list):
+            for l in range(k):
+
+                #the first fold is for validation, then remaining are for training
+                val_idx = fold[1]
+                train_idx = np.concatenate([fold[m] for m in range(k) if m!=1])
+
+                Xtrain = X[train_idx]
+                ytrain = y[train_idx]
+                Xval =X[val_idx]
+                yval = y[val_idx]
+
+                a, b = dualHinge(Xtrain, ytrain, lamb, kernel_func)
+                yhat = dualClassify(Xval, a, b, Xtrain, ytrain, lamb, kernel_func)
+                cv_acc[l, i, j] = np.mean(yhat == yval)
+
+     # average over all folds            
+    cv_acc = np.mean(cv_acc, axis=0)
+
+    #best pair (lamb, kernel) is the one with the highest validation accuracy
+    best_i, best_j = np.unravel_index(np.argmax(cv_acc), cv_acc.shape)
+    best_lamb = lamb_list[best_i]
+    best_kernel = lamb_list[best_j]
+    return cv_acc, best_lamb, best_kernel

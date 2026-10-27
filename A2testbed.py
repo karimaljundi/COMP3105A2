@@ -7,7 +7,7 @@
 
 import numpy
 import A2codes
-from A2helpers import plotModel, plotAdjModel, plotDualModel, polyKernel, generateData
+from A2helpers import gaussKernel, linearKernel, plotModel, plotAdjModel, plotDualModel, polyKernel, generateData
 
 
 def _plotCls():
@@ -36,5 +36,4 @@ def _plotCls():
 if __name__ == "__main__":
 
 	_plotCls()
-
 	
