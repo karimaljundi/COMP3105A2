@@ -1,4 +1,3 @@
-from turtle import st
 
 import numpy as np
 from scipy.optimize import minimize
@@ -222,3 +221,9 @@ def dualHinge(X, y, lamb, kernel_func, stabilizer=1e-5):
     b = (y[i,0] - (1 / lamb) * K[i:i + 1] @ (y * a)).item()
     
     return a,b     
+def dualClassify(Xtest, a, b, X, y, lamb, kernel_func):
+
+    #score: (1/lamb) k(x, X) D(y) a + b, m by 1
+    scores = (1/lamb) * kernel_func(Xtest, X) @ (y*a) + b
+    # return 0 for a score of exactly 0, but we need +1
+    return np.where(scores>=0, 1, -1)

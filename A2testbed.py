@@ -6,7 +6,6 @@
 #       We will use a different script to test your code. 
 
 import numpy
-
 import A2codes
 from A2helpers import plotModel, plotAdjModel, plotDualModel, polyKernel, generateData
 
@@ -30,14 +29,12 @@ def _plotCls():
 	a, a0 = A2codes.adjHinge(Xtrain, ytrain, lamb, kernel_func)
 	plotAdjModel(Xtrain, ytrain, a, a0, kernel_func, A2codes.adjClassify)
 	# Dual
-	# a, b = A2codes.dualHinge(Xtrain, ytrain, lamb, kernel_func)
-	# plotDualModel(Xtrain, ytrain, a, b, lamb, kernel_func, A2codes.dualClassify)
+	a, b = A2codes.dualHinge(Xtrain, ytrain, lamb, kernel_func)
+	plotDualModel(Xtrain, ytrain, a, b, lamb, kernel_func, A2codes.dualClassify)
 
 
 if __name__ == "__main__":
 
-	# _plotCls()
-	train, test = A2codes.synExperimentsKernel()
-	print(numpy.round(train, 4))
-	print(numpy.round(test, 4))
+	_plotCls()
+
 	
