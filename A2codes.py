@@ -1,3 +1,5 @@
+from turtle import st
+
 import numpy as np
 from scipy.optimize import minimize
 import cvxopt
@@ -190,3 +192,33 @@ def synExperimentsKernel():
     test_accuracy = np.hstack([np.mean(test_acc_sq_hinge, axis=2),
                                np.mean(test_acc_hinge, axis=2)])
     return train_accuracy, test_accuracy    
+def dualHinge(X, y, lamb, kernel_func, stabilizer=1e-5):
+    n = X.shape[0]
+    y = y.astype(float)
+    K = kernel_func(X, X)
+
+    # D(y) * K D(y) is the same as Y* Y^T * K
+    P = (1 / lamb) * ( y @ y.T) * K + stabilizer * np.eye(n)
+    q = -np.ones((n,1))
+
+
+    #Box constraints 0<= a <= 1 translated to -a <=0 and a <=1
+    G = np.vstack([-np.eye(n), np.eye(n)])
+    h = np.vstack([np.zeros((n,1)), np.ones((n,1))])
+
+    #euqlity constraint y^T * a = 0
+    A = y.reshape(1, -1)
+    b_eq = np.zeros((1,1))
+
+    cvxopt.solvers.options['show_progress'] = False
+    sol = cvxopt.solvers.qp(cvxopt.matrix(P), cvxopt.matrix(q),
+                            cvxopt.matrix(G), cvxopt.matrix(h),
+                            cvxopt.matrix(A), cvxopt.matrix(b_eq))
+    a = np.array(sol['x'])
+
+
+    # use the a_i closes to 0.5 
+    i = np.argmin(np.abs(a-0.5))
+    b = (y[i,0] - (1 / lamb) * K[i:i + 1] @ (y * a)).item()
+    
+    return a,b     

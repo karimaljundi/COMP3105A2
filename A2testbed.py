@@ -36,6 +36,8 @@ def _plotCls():
 
 if __name__ == "__main__":
 
-	_plotCls()
-
+	# _plotCls()
+	train, test = A2codes.synExperimentsKernel()
+	print(numpy.round(train, 4))
+	print(numpy.round(test, 4))
 	
