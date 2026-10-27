@@ -4,6 +4,7 @@
 #       You can use this script to visualize your models once you finish your code. 
 #       This script is not meant to be thorough (it does not call all your functions).
 #       We will use a different script to test your code. 
+
 import numpy
 
 import A2codes
@@ -36,3 +37,5 @@ def _plotCls():
 if __name__ == "__main__":
 
 	_plotCls()
+
+	

@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.optimize import minimize
 import cvxopt
-from A2helpers import generateData
+from A2helpers import generateData, linearKernel, polyKernel, gaussKernel
 
 def minSqHinge(X, y, lamb):
     d = X.shape[1]
@@ -94,7 +94,7 @@ def synExperimentsRegularize():
     test_accuracy = np.hstack([np.mean(test_acc_sq_hinge, axis=2),
                                np.mean(test_acc_hinge, axis=2)])
     return train_accuracy, test_accuracy
-def adjHinge(X, y, lamb, kernel_func):
+def adjSqHinge(X, y, lamb, kernel_func):
     # w = X^T * a => x_i ^ T * w becomes k_i^T * a
     K = kernel_func(X,X)
     n = X.shape[0]
@@ -136,7 +136,7 @@ def adjHinge(X, y, lamb, kernel_func, stabilizer=1e-5):
 
     # 1 - y_i (k_i ^ T * a + a0) <= xi_i
     # rewritten as -Delta(y) * K * a - y * a0 - xi <= -1
-    G2 = np.hstack([np.zeros((n, n)), np.zeros((n,1)), -np.eye(n)])
+    G2 = np.hstack([-y * K, -y, -np.eye(n)])
     h2 = -np.ones((n,1))
 
     G = np.vstack([G1, G2])
@@ -152,3 +152,41 @@ def adjHinge(X, y, lamb, kernel_func, stabilizer=1e-5):
 def adjClassify(Xtest, a, a0, X, kernel_func):
     scores = kernel_func(Xtest, X) @ a + a0
     return np.where(scores >=0, 1, -1)
+def synExperimentsKernel():
+    n_runs = 10
+    n_train = 100
+    n_test = 1000
+    lamb = 0.001
+    kernel_list = [linearKernel,
+    lambda X1, X2: polyKernel(X1, X2, 2),
+    lambda X1, X2: polyKernel(X1, X2, 3),
+    lambda X1, X2: gaussKernel(X1, X2, 1.0),
+    lambda X1, X2: gaussKernel(X1, X2, 0.5)]
+    gen_model_list = [1, 2, 3]
+    train_acc_sq_hinge = np.zeros([len(kernel_list), len(gen_model_list), n_runs])
+    test_acc_sq_hinge = np.zeros([len(kernel_list), len(gen_model_list), n_runs])
+    train_acc_hinge = np.zeros([len(kernel_list), len(gen_model_list), n_runs])
+    test_acc_hinge = np.zeros([len(kernel_list), len(gen_model_list), n_runs])
+    # TODO: Change the following random seed to your GROUP ID
+    # (the XX in A2-XX on Brightspace)
+    np.random.seed(176)
+    for r in range(n_runs):
+        for i, kernel in enumerate(kernel_list):
+            for j, gen_model in enumerate(gen_model_list):
+                Xtrain, ytrain = generateData(n=n_train, gen_model=gen_model)
+                Xtest, ytest = generateData(n=n_test, gen_model=gen_model)
+                a, a0 = adjSqHinge(Xtrain, ytrain, lamb, kernel)
+
+
+                train_acc_sq_hinge[i, j, r] = np.mean(adjClassify(Xtrain, a, a0, Xtrain, kernel) == ytrain)# TODO: compute accuracy on training set
+                test_acc_sq_hinge[i, j, r] = np.mean(adjClassify(Xtest, a, a0, Xtrain, kernel)== ytest)
+                # TODO: compute accuracy on test set
+                a, a0 = adjHinge(Xtrain, ytrain, lamb, kernel)
+                train_acc_hinge[i, j, r] = np.mean(adjClassify(Xtrain, a, a0, Xtrain, kernel) == ytrain)# TODO: compute accuracy on training set
+                test_acc_hinge[i, j, r] = np.mean(adjClassify(Xtest, a, a0, Xtrain, kernel)==ytest)# TODO: compute accuracy on test set
+    
+    train_accuracy = np.hstack([np.mean(train_acc_sq_hinge, axis=2),
+                                np.mean(train_acc_hinge, axis=2)])
+    test_accuracy = np.hstack([np.mean(test_acc_sq_hinge, axis=2),
+                               np.mean(test_acc_hinge, axis=2)])
+    return train_accuracy, test_accuracy    
